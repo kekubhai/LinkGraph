@@ -34,7 +34,15 @@ while user_input!="exit":
 
 
 
-
+with open("logging.txt", "w") as file:
+    file.write("Your messages are logges :\n")
+    for message in conversation_history:
+        if isinstance(message, HumanMessage):
+            file.write(f"You: {message.content}\n")
+        elif isinstance(message, AIMessage):
+            file.write(f"AI: {message.content}\n")
+        file.write("\n End of conversation.\n")
+            
 
 
 
