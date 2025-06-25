@@ -12,14 +12,13 @@ document_content=""
 class AgentState(TypedDict):
     messages: Annotated[Sequence[BaseMessage], add_messages]
     
-    
-    
 @tool
 def update(content:str)->str:
     """Update the document content."""
     global document_content
     document_content = content
     return f"Document updated with: {content}"
+
 @tool 
 def save(filename:str) ->str:
     """Save the document content to a file."""
@@ -34,6 +33,7 @@ def save(filename:str) ->str:
     except Exception as e:
         print(f"Error saving document: {e}")
         return f"Error saving document: {e}"
+
 tools=[update,save]
 model=ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2).bind_tools(tools)
 
@@ -46,12 +46,10 @@ def my_agent(state:AgentState)->AgentState:
     if not state['messages']:
         user_input="I am ready to help you update a document . What would you like to create?"
         user_message=HumanMessage(content=user_input)
-        
     else :
         user_input=input("What would you like to do with the document? ") 
         print(f"\nUser input: {user_input}")
         user_message=HumanMessage(content=user_input)
-           
            
     all_messages = [system_prompt] + list(state["messages"]) + [user_message] 
     response=model.invoke(all_messages)   
@@ -60,24 +58,22 @@ def my_agent(state:AgentState)->AgentState:
     return {"messages": [response]}
 
 def should_continue(state:AgentState)->str:
-    
     messages=state["messages"]
     if not messages:
         return "continue"
-    for message in reversed(messages):
-        
-        if isinstance(message,ToolMessage) and \
-              "saved" in message.content.lower() and "document" in message.content.lower():
-              return  "end"
-          
-        return "continue"
     
+    for message in reversed(messages):
+        if isinstance(message, ToolMessage) and \
+              "saved" in message.content.lower() and "document" in message.content.lower():
+              return "end"
+    
+    return "continue"
     
 def print_messages(messages):
     if not messages:
         return 
-    for message in messages[:-3]:
-        if isinstance(message.ToolMessage):
+    for message in messages[-3:]:  # Fixed: show last 3 messages
+        if isinstance(message, ToolMessage):  # Fixed: removed dot
             print(f"Tool call: {message.content}")
             
 graph = StateGraph(AgentState)    
@@ -85,11 +81,12 @@ graph.add_node("my_agent", my_agent)
 graph.add_node("tools", ToolNode(tools)) 
 
 graph.set_entry_point("my_agent")
-graph.add_edge("my_agent", "tools")  # Fixed: was "agent"
+graph.add_edge("my_agent", "tools")
 graph.add_conditional_edges("my_agent", should_continue, {
     "continue": "tools",
     "end": END
 }) 
+graph.add_edge("tools", "my_agent")  # Added missing edge back to agent
 app = graph.compile()
               
     
@@ -97,7 +94,7 @@ def run_drafter():
     print("\n ================== Drafter Agent =================")
     state={"messages":[]}
     for step in app.stream(state,stream_mode="values"):
-        if "messages"in step:
+        if "messages" in step:
             print_messages(step["messages"])
     print("\n ================== End of Drafter Agent =================")            
     
