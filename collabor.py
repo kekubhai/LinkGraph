@@ -43,3 +43,64 @@ def my_agent(state:AgentState)->AgentState:
                                 " - If the user wants to save and finish the document, they can use the save tool ."
                                 "Make sure to always show the current document state after modifications"
                                 " - The current document content is :{document_content}" """)
+    if not state['messages']:
+        user_input="I am ready to help you update a document . What would you like to create?"
+        user_message=HumanMessage(content=user_input)
+        
+    else :
+        user_input=input("\What would you like to do with the docuemnt? ") 
+        print(f"\nUser input: {user_input}")
+        user_message=HumanMessage(content=user_input)
+           
+           
+    all_messages = [system_prompt] + list(state["messages"]) + [user_message] 
+    response=model.invoke(all_messages)   
+    
+    print(f"\nAI response: {response.content}")   
+
+
+
+def should_continue(state:AgentState)->str:
+    
+    messages=state["messages"]
+    if not messages:
+        return "continue"
+    for message in reversed(messages):
+        
+        if isinstance(message,ToolMessage) and \
+              "saved" in message.content.lower() and "document" in message.content.lower():
+              return  "end"
+          
+        return "continue"
+    
+    
+def print_messages(messages):
+    if not messages:
+        return 
+    for message in messages[:-3]:
+        if isinstance(message.ToolMessage):
+            print(f"Tool call: {message.content}")
+            
+    graph=StateGraph(AgentState)    
+    graph.add_node("my_agent", my_agent)
+    graph.add_node("tools", ToolNode(tools)) 
+    
+    graph.set_entry_point("my_agent")
+    graph.add_edge("agent", "tools")
+    graph.add_conditional_edges("my_agent", should_continue, {
+        "continue": "tools",
+        "end": END
+    }) 
+    app=graph.compile()                   
+              
+    
+def run_drafter():
+    print("\n ================== Drafter Agent =================")
+    state={"messages":[]}
+    for step in app.stream(state,stream_mode="values"):
+        if "messages"in step:
+            print_messages(step["messages"])
+    print("\n ================== End of Drafter Agent =================")            
+    
+if __name__ == "__main__":
+    run_drafter()        
