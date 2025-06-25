@@ -48,7 +48,7 @@ def my_agent(state:AgentState)->AgentState:
         user_message=HumanMessage(content=user_input)
         
     else :
-        user_input=input("\What would you like to do with the docuemnt? ") 
+        user_input=input("What would you like to do with the document? ") 
         print(f"\nUser input: {user_input}")
         user_message=HumanMessage(content=user_input)
            
@@ -57,8 +57,7 @@ def my_agent(state:AgentState)->AgentState:
     response=model.invoke(all_messages)   
     
     print(f"\nAI response: {response.content}")   
-
-
+    return {"messages": [response]}
 
 def should_continue(state:AgentState)->str:
     
@@ -81,17 +80,17 @@ def print_messages(messages):
         if isinstance(message.ToolMessage):
             print(f"Tool call: {message.content}")
             
-    graph=StateGraph(AgentState)    
-    graph.add_node("my_agent", my_agent)
-    graph.add_node("tools", ToolNode(tools)) 
-    
-    graph.set_entry_point("my_agent")
-    graph.add_edge("agent", "tools")
-    graph.add_conditional_edges("my_agent", should_continue, {
-        "continue": "tools",
-        "end": END
-    }) 
-    app=graph.compile()                   
+graph = StateGraph(AgentState)    
+graph.add_node("my_agent", my_agent)
+graph.add_node("tools", ToolNode(tools)) 
+
+graph.set_entry_point("my_agent")
+graph.add_edge("my_agent", "tools")  # Fixed: was "agent"
+graph.add_conditional_edges("my_agent", should_continue, {
+    "continue": "tools",
+    "end": END
+}) 
+app = graph.compile()
               
     
 def run_drafter():
@@ -103,4 +102,4 @@ def run_drafter():
     print("\n ================== End of Drafter Agent =================")            
     
 if __name__ == "__main__":
-    run_drafter()        
+    run_drafter()
