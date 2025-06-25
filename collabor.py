@@ -35,7 +35,7 @@ def save(filename:str) ->str:
         return f"Error saving document: {e}"
 
 tools=[update,save]
-model=ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.2).bind_tools(tools)
+model=ChatGoogleGenerativeAI(model="gemini-2.5-flash", temperature=0.2).bind_tools(tools)
 
 def my_agent(state:AgentState)->AgentState:
     system_prompt=SystemMessage(content=f"""Your are a Drafter , a helpful writing assistant . You are going to help the user to update and modify documents.
