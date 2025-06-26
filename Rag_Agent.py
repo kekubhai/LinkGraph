@@ -15,7 +15,7 @@ load_dotenv()
 
 # Fixed: Use correct Gemini model name
 llm = ChatGoogleGenerativeAI(
-    model='gemini-2.5-pro',
+    model='gemini-2.0-flash',
     temperature=0.0,
 )
 
