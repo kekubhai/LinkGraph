@@ -27,8 +27,10 @@ async def main():
     model = ChatGroq(model="qwen-qwq-32b")
     agent = create_react_agent(model, tools)
 
-    math_response = await agent.ainvoke({"messages": [HumanMessage(content="What is 10+20?")]})
-    print(math_response)
+    math_response = await agent.ainvoke({"messages":[{"role": "user", "content": "What is 2 + 2?"}]})
+    print("Math response:", math_response['messages'][-1].content)
+    
+    
 
 # run outside
 asyncio.run(main())
